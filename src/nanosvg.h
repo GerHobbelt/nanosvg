@@ -1236,8 +1236,12 @@ static unsigned int nsvg__parseColorRGB(const char* str)
 	unsigned int r=0, g=0, b=0;
 	if (sscanf(str, "rgb(%u, %u, %u)", &r, &g, &b) == 3)		// decimal integers
 		return NSVG_RGB(r, g, b);
-	if (sscanf(str, "rgb(%u%%, %u%%, %u%%)", &r, &g, &b) == 3)	// decimal integer percentage
-		return NSVG_RGB(r*255/100, g*255/100, b*255/100);
+	if (sscanf(str, "rgb(%u%%, %u%%, %u%%)", &r, &g, &b) == 3) {	// decimal integer percentage
+		r = (r <= 100) ? ((r*255)/100) : 255;			// FLTK: clip percentages >100
+		g = (g <= 100) ? ((g*255)/100) : 255;
+		b = (b <= 100) ? ((b*255)/100) : 255;
+		return NSVG_RGB(r, g, b);
+	}
 	return NSVG_RGB(128, 128, 128);
 }
 
