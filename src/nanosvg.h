@@ -1262,9 +1262,17 @@ static unsigned int nsvg__parseColorRGBA(const char* str)
 	char s1[32]="", s2[32]="", s3[32]="";
 	sscanf(str + 5, "%d%[%%, \t]%d%[%%, \t]%d%[%%, \t]%f", &r, s1, &g, s2, &b, s3, &a);
 	if (strchr(s1, '%')) {
-		return NSVG_RGBA((r*255)/100,(g*255)/100,(b*255)/100,(a*255)/100);
+		r = (r <= 100) ? ((r*255)/100) : 255;			// FLTK: clip percentages >100
+		g = (g <= 100) ? ((g*255)/100) : 255;
+		b = (b <= 100) ? ((b*255)/100) : 255;
+		a = (a <= 100) ? ((a*255)/100) : 255;
+		return NSVG_RGBA(r,g,b,a);
 	} else {
-		return NSVG_RGBA(r,g,b,(a*255));
+		r = (r <= 255) ? r : 255;			// FLTK: clip percentages >100
+		g = (g <= 255) ? g : 255;
+		b = (b <= 255) ? b : 255;
+		a = (a <= 1.0) ? a*255 : 255;
+		return NSVG_RGBA(r,g,b,a);
 	}
 }
 
