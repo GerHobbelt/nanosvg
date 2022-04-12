@@ -1231,6 +1231,16 @@ static const char* nsvg__getNextPathItem(const char* s, char* it)
 	return s;
 }
 
+// clip color value c to range 0..255
+static inline unsigned int clipColorPrimary(float c)
+{
+	if (c < 0.0)
+		return 0;
+	if (c >= 255)
+		return 255;
+	return roundf(c);
+}
+
 static unsigned int nsvg__parseColorHex(const char* str)
 {
 	unsigned int r=0, g=0, b=0;
@@ -1244,12 +1254,19 @@ static unsigned int nsvg__parseColorHex(const char* str)
 static unsigned int nsvg__parseColorRGB(const char* str)
 {
 	unsigned int r=0, g=0, b=0;
-	if (sscanf(str, "rgb(%u, %u, %u)", &r, &g, &b) == 3)		// decimal integers
+	float rf=0, gf=0, bf=0;
+	if (sscanf(str, "rgb(%f, %f, %f)", &rf, &gf, &bf) == 3)		// decimal integers
+	{
+		r = clipColorPrimary(rf);			// FLTK: clip values >255
+		g = clipColorPrimary(gf);
+		b = clipColorPrimary(bf);
 		return NSVG_RGB(r, g, b);
-	if (sscanf(str, "rgb(%u%%, %u%%, %u%%)", &r, &g, &b) == 3) {	// decimal integer percentage
-		r = (r <= 100) ? ((r*255)/100) : 255;			// FLTK: clip percentages >100
-		g = (g <= 100) ? ((g*255)/100) : 255;
-		b = (b <= 100) ? ((b*255)/100) : 255;
+	}
+	if (sscanf(str, "rgb(%f%%, %f%%, %f%%)", &rf, &gf, &bf) == 3)	// decimal integer percentage
+	{
+		r = clipColorPrimary(rf*2.55f);			// FLTK: clip percentages >100
+		g = clipColorPrimary(gf*2.55f);
+		b = clipColorPrimary(bf*2.55f);
 		return NSVG_RGB(r, g, b);
 	}
 	return NSVG_RGB(128, 128, 128);
@@ -1257,21 +1274,21 @@ static unsigned int nsvg__parseColorRGB(const char* str)
 
 static unsigned int nsvg__parseColorRGBA(const char* str)
 {
-	int r = -1, g = -1, b = -1;
-	float a = -1;
+	int r = -1, g = -1, b = -1, a = -1;
+	float rf=0, gf=0, bf=0, af = -1;
 	char s1[32]="", s2[32]="", s3[32]="";
-	sscanf(str + 5, "%d%[%%, \t]%d%[%%, \t]%d%[%%, \t]%f", &r, s1, &g, s2, &b, s3, &a);
+	sscanf(str + 5, "%f%[%%, \t]%f%[%%, \t]%f%[%%, \t]%f", &rf, s1, &gf, s2, &bf, s3, &af);
 	if (strchr(s1, '%')) {
-		r = (r <= 100) ? ((r*255)/100) : 255;			// FLTK: clip percentages >100
-		g = (g <= 100) ? ((g*255)/100) : 255;
-		b = (b <= 100) ? ((b*255)/100) : 255;
-		a = (a <= 100) ? ((a*255)/100) : 255;
+		r = clipColorPrimary(rf*2.55f);			// FLTK: clip percentages >100
+		g = clipColorPrimary(gf*2.55f);
+		b = clipColorPrimary(bf*2.55f);
+		a = clipColorPrimary(af*2.55f);
 		return NSVG_RGBA(r,g,b,a);
 	} else {
-		r = (r <= 255) ? r : 255;			// FLTK: clip percentages >100
-		g = (g <= 255) ? g : 255;
-		b = (b <= 255) ? b : 255;
-		a = (a <= 1.0) ? a*255 : 255;
+		r = clipColorPrimary(rf);			// FLTK: clip values >255
+		g = clipColorPrimary(gf);
+		b = clipColorPrimary(bf);
+		a = clipColorPrimary(af * 255);
 		return NSVG_RGBA(r,g,b,a);
 	}
 }
