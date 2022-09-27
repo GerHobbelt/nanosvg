@@ -19,6 +19,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <float.h>
+
+#if defined(HAVE_GLFW)
+
 #include <GLFW/glfw3.h>
 
 #define NANOSVG_IMPLEMENTATION
@@ -215,6 +218,11 @@ void resizecb(GLFWwindow* window, int width, int height)
 	drawframe(window);
 }
 
+
+#if defined(BUILD_MONOLITHIC)
+#define main      nanosvg_example1_main
+#endif
+
 int main()
 {
 	GLFWwindow* window;
@@ -256,3 +264,5 @@ int main()
 	glfwTerminate();
 	return 0;
 }
+
+#endif

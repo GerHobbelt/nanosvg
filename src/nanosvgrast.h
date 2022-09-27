@@ -388,7 +388,7 @@ static void nsvg__flattenCubicBez(NSVGrasterizer* r,
 	nsvg__flattenCubicBez(r, x1234,y1234, x234,y234, x34,y34, x4,y4, level, type);
 }
 
-static void nsvg__flattenShape(NSVGrasterizer* r, NSVGshape* shape, float sx, float sy)
+static void nsvg__flattenShape(NSVGrasterizer* r, const NSVGshape* shape, float sx, float sy)
 {
 	int i, j;
 	NSVGpath* path;
@@ -752,7 +752,7 @@ static void nsvg__prepareStroke(NSVGrasterizer* r, float miterLimit, int lineJoi
 	}
 }
 
-static void nsvg__flattenShapeStroke(NSVGrasterizer* r, NSVGshape* shape, float sx, float sy)
+static void nsvg__flattenShapeStroke(NSVGrasterizer* r, const NSVGshape* shape, float sx, float sy)
 {
 	int i, j, closed;
 	NSVGpath* path;
@@ -1286,7 +1286,7 @@ static void nsvg__unpremultiplyAlpha(unsigned char* image, int w, int h, int str
 }
 
 
-static void nsvg__initPaint(NSVGcachedPaint* cache, NSVGpaint* paint, float opacity)
+static void nsvg__initPaint(NSVGcachedPaint* cache, const NSVGpaint* paint, float opacity)
 {
 	int i, j;
 	NSVGgradient* grad;
@@ -1388,17 +1388,19 @@ static void dumpEdges(NSVGrasterizer* r, const char* name)
 }
 */
 
-static void drawStroke(NSVGrasterizer* r, const NSVGshape *shape, NSVGcachedPaint * cache, float tx, float ty, float scale)
+static void drawStroke(NSVGrasterizer* r, const NSVGshape *shape, NSVGcachedPaint * cache, float tx, float ty, float sx, float sy)
 {
 	int i;
 	NSVGedge *e = NULL;
+	const float sw = (sx + sy) / 2; // average scaling factor
+	const float lineWidth = shape->strokeWidth * sw; // FIXME (?)
 
-	if (shape->stroke.type != NSVG_PAINT_NONE && (shape->strokeWidth * scale) > 0.01f) {
+	if (shape->stroke.type != NSVG_PAINT_NONE && lineWidth > 0.01f) {
 		nsvg__resetPool(r);
 		r->freelist = NULL;
 		r->nedges = 0;
 
-		nsvg__flattenShapeStroke(r, shape, scale);
+		nsvg__flattenShapeStroke(r, shape, sx, sy);
 
 //		dumpEdges(r, "edge.svg");
 
@@ -1417,11 +1419,11 @@ static void drawStroke(NSVGrasterizer* r, const NSVGshape *shape, NSVGcachedPain
 		// now, traverse the scanlines and find the intersections on each scanline, use non-zero rule
 		nsvg__initPaint(cache, &shape->stroke, shape->opacity);
 
-		nsvg__rasterizeSortedEdges(r, tx,ty,scale, cache, NSVG_FILLRULE_NONZERO);
+		nsvg__rasterizeSortedEdges(r, tx, ty, sx, sy, cache, NSVG_FILLRULE_NONZERO);
 	}
 }
 
-static void drawFill(NSVGrasterizer* r, const NSVGshape *shape, NSVGcachedPaint * cache, float tx, float ty, float scale)
+static void drawFill(NSVGrasterizer* r, const NSVGshape *shape, NSVGcachedPaint * cache, float tx, float ty, float sx, float sy)
 {
 	int i;
 	NSVGedge *e = NULL;
@@ -1431,7 +1433,7 @@ static void drawFill(NSVGrasterizer* r, const NSVGshape *shape, NSVGcachedPaint 
 		r->freelist = NULL;
 		r->nedges = 0;
 
-		nsvg__flattenShape(r, shape, scale);
+		nsvg__flattenShape(r, shape, sx, sy);
 
 		// Scale and translate edges
 		for (i = 0; i < r->nedges; i++) {
@@ -1448,7 +1450,7 @@ static void drawFill(NSVGrasterizer* r, const NSVGshape *shape, NSVGcachedPaint 
 		// now, traverse the scanlines and find the intersections on each scanline, use non-zero rule
 		nsvg__initPaint(cache, &shape->fill, shape->opacity);
 
-		nsvg__rasterizeSortedEdges(r, tx,ty,scale, cache, shape->fillRule);
+		nsvg__rasterizeSortedEdges(r, tx, ty, sx, sy, cache, shape->fillRule);
 	}
 }
 
@@ -1484,15 +1486,15 @@ void nsvgRasterizeXY(NSVGrasterizer* r,
 			case NSVG_PAINTORDER_FILL_STROKE_MARKERS:
 			case NSVG_PAINTORDER_FILL_MARKERS_STROKE:
 			case NSVG_PAINTORDER_MARKERS_FILL_STROKE:
-				drawFill(r, shape, &cache, tx, ty, scale);
-				drawStroke(r, shape, &cache, tx, ty, scale);
+				drawFill(r, shape, &cache, tx, ty, sx, sy);
+				drawStroke(r, shape, &cache, tx, ty, sx, sy);
 				break;
 
 			case NSVG_PAINTORDER_STROKE_FILL_MARKERS:
 			case NSVG_PAINTORDER_STROKE_MARKERS_FILL:
 			case NSVG_PAINTORDER_MARKERS_STROKE_FILL:
-				drawStroke(r, shape, &cache, tx, ty, scale);
-				drawFill(r, shape, &cache, tx, ty, scale);
+				drawStroke(r, shape, &cache, tx, ty, sx, sy);
+				drawFill(r, shape, &cache, tx, ty, sx, sy);
 				break;
 		}
 	}

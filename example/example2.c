@@ -26,6 +26,11 @@
 #define NANOSVGRAST_IMPLEMENTATION
 #include "nanosvgrast.h"
 
+
+#if defined(BUILD_MONOLITHIC)
+#define main      nanosvg_example1_main
+#endif
+
 int main()
 {
 	NSVGimage *image = NULL;
