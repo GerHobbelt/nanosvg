@@ -1307,7 +1307,7 @@ static void nsvg__initPaint(NSVGcachedPaint* cache, const NSVGpaint* paint, floa
 	if (grad->nstops == 0) {
 		for (i = 0; i < 256; i++)
 			cache->colors[i] = 0;
-	} if (grad->nstops == 1) {
+	} else if (grad->nstops == 1) {
 		for (i = 0; i < 256; i++)
 			cache->colors[i] = nsvg__applyOpacity(grad->stops[i].color, opacity);
 	} else {
