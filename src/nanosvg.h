@@ -167,11 +167,11 @@ typedef struct NSVGimage
 } NSVGimage;
 
 // Parses SVG file from a file, returns SVG image as paths.
-NSVGimage* nsvgParseFromFile(const char* filename, const char* units, float dpi);
+NSVGimage* nsvgParseFromFile(const char* filename, const char* units, float dpi, double image_width, double image_height);
 
 // Parses SVG file from a null terminated string, returns SVG image as paths.
 // Important note: changes the string.
-NSVGimage* nsvgParse(char* input, const char* units, float dpi);
+NSVGimage* nsvgParse(char* input, const char* units, float dpi, double image_width, double image_height);
 
 // Duplicates a path.
 NSVGpath* nsvgDuplicatePath(NSVGpath* p);
@@ -789,19 +789,20 @@ static float nsvg__actualLength(NSVGparser* p)
 static float nsvg__convertToPixels(NSVGparser* p, NSVGcoordinate c, float orig, float length)
 {
 	NSVGattrib* attr = nsvg__getAttr(p);
-	switch (c.units) {
-		case NSVG_UNITS_USER:		return c.value;
-		case NSVG_UNITS_PX:			return c.value;
-		case NSVG_UNITS_PT:			return c.value / 72.0f * p->dpi;
-		case NSVG_UNITS_PC:			return c.value / 6.0f * p->dpi;
-		case NSVG_UNITS_MM:			return c.value / 25.4f * p->dpi;
-		case NSVG_UNITS_CM:			return c.value / 2.54f * p->dpi;
-		case NSVG_UNITS_IN:			return c.value * p->dpi;
-		case NSVG_UNITS_EM:			return c.value * attr->fontSize;
-		case NSVG_UNITS_EX:			return c.value * attr->fontSize * 0.52f; // x-height of Helvetica.
-		case NSVG_UNITS_PERCENT:	return orig + c.value / 100.0f * length;
-		default:					return c.value;
-	}
+	// ignore units
+	// switch (c.units) {
+	// 	case NSVG_UNITS_USER:		return c.value;
+	// 	case NSVG_UNITS_PX:			return c.value;
+	// 	case NSVG_UNITS_PT:			return c.value / 72.0f * p->dpi;
+	// 	case NSVG_UNITS_PC:			return c.value / 6.0f * p->dpi;
+	// 	case NSVG_UNITS_MM:			return c.value / 25.4f * p->dpi;
+	// 	case NSVG_UNITS_CM:			return c.value / 2.54f * p->dpi;
+	// 	case NSVG_UNITS_IN:			return c.value * p->dpi;
+	// 	case NSVG_UNITS_EM:			return c.value * attr->fontSize;
+	// 	case NSVG_UNITS_EX:			return c.value * attr->fontSize * 0.52f; // x-height of Helvetica.
+	// 	case NSVG_UNITS_PERCENT:	return orig + c.value / 100.0f * length;
+	// 	default:					return c.value;
+	// }
 	return c.value;
 }
 
@@ -2870,7 +2871,7 @@ static void nsvg__scaleGradient(NSVGgradient* grad, float tx, float ty, float sx
 	nsvg__xformMultiply (grad->xform, t);
 }
 
-static void nsvg__scaleToViewbox(NSVGparser* p, const char* units)
+static void nsvg__scaleToViewbox(NSVGparser* p, const char* units, double image_width, double image_height)
 {
 	NSVGshape* shape;
 	NSVGpath* path;
@@ -2878,6 +2879,7 @@ static void nsvg__scaleToViewbox(NSVGparser* p, const char* units)
 	int i;
 	float* pt;
 
+	// THIS SHOULD BE SET, IF THIS IS NEEDED, THERE MIGHT BE TROUBLE
 	// Guess image size if not set completely.
 	nsvg__imageBounds(p, bounds);
 
@@ -2902,29 +2904,32 @@ static void nsvg__scaleToViewbox(NSVGparser* p, const char* units)
 	if (p->image->height == 0)
 		p->image->height = p->viewHeight;
 
-	tx = -p->viewMinx;
-	ty = -p->viewMiny;
+	// No translation!
+	// tx = -p->viewMinx;
+	// ty = -p->viewMiny;
 	sx = p->viewWidth > 0 ? p->image->width / p->viewWidth : 0;
 	sy = p->viewHeight > 0 ? p->image->height / p->viewHeight : 0;
 	// Unit scaling
-	us = 1.0f / nsvg__convertToPixels(p, nsvg__coord(1.0f, nsvg__parseUnits(units)), 0.0f, 1.0f);
+	us = 1.0f; // Fixed unit scaling
+	// us = 1.0f / nsvg__convertToPixels(p, nsvg__coord(1.0f, nsvg__parseUnits(units)), 0.0f, 1.0f);
 
-	// Fix aspect ratio
-	if (p->alignType == NSVG_ALIGN_MEET) {
-		// fit whole image into viewbox
-		sx = sy = nsvg__minf(sx, sy);
-		tx += nsvg__viewAlign(p->viewWidth*sx, p->image->width, p->alignX) / sx;
-		ty += nsvg__viewAlign(p->viewHeight*sy, p->image->height, p->alignY) / sy;
-	} else if (p->alignType == NSVG_ALIGN_SLICE) {
-		// fill whole viewbox with image
-		sx = sy = nsvg__maxf(sx, sy);
-		tx += nsvg__viewAlign(p->viewWidth*sx, p->image->width, p->alignX) / sx;
-		ty += nsvg__viewAlign(p->viewHeight*sy, p->image->height, p->alignY) / sy;
-	}
+	// NO AR FIX
+	// // Fix aspect ratio
+	// if (p->alignType == NSVG_ALIGN_MEET) {
+	// 	// fit whole image into viewbox
+	// 	sx = sy = nsvg__minf(sx, sy);
+	// 	tx += nsvg__viewAlign(p->viewWidth*sx, p->image->width, p->alignX) / sx;
+	// 	ty += nsvg__viewAlign(p->viewHeight*sy, p->image->height, p->alignY) / sy;
+	// } else if (p->alignType == NSVG_ALIGN_SLICE) {
+	// 	// fill whole viewbox with image
+	// 	sx = sy = nsvg__maxf(sx, sy);
+	// 	tx += nsvg__viewAlign(p->viewWidth*sx, p->image->width, p->alignX) / sx;
+	// 	ty += nsvg__viewAlign(p->viewHeight*sy, p->image->height, p->alignY) / sy;
+	// }
 
 	// Transform
-	sx *= us;
-	sy *= us;
+	// sx *= us;
+	// sy *= us;
 	avgs = (sx+sy) / 2.0f;
 	for (shape = p->image->shapes; shape != NULL; shape = shape->next) {
 		shape->bounds[0] = (shape->bounds[0] + tx) * sx;
@@ -2991,7 +2996,7 @@ static void nsvg__createGradients(NSVGparser* p)
 	}
 }
 
-NSVGimage* nsvgParse(char* input, const char* units, float dpi)
+NSVGimage* nsvgParse(char* input, const char* units, float dpi, double image_width, double image_height)
 {
 	NSVGparser* p;
 	NSVGimage* ret = 0;
@@ -3008,7 +3013,7 @@ NSVGimage* nsvgParse(char* input, const char* units, float dpi)
 	nsvg__createGradients(p);
 
 	// Scale to viewBox
-	nsvg__scaleToViewbox(p, units);
+	nsvg__scaleToViewbox(p, units, image_width, image_height);
 
 	ret = p->image;
 	p->image = NULL;
@@ -3018,7 +3023,7 @@ NSVGimage* nsvgParse(char* input, const char* units, float dpi)
 	return ret;
 }
 
-NSVGimage* nsvgParseFromFile(const char* filename, const char* units, float dpi)
+NSVGimage* nsvgParseFromFile(const char* filename, const char* units, float dpi, double image_width, double image_height)
 {
 	FILE* fp = NULL;
 	size_t size;
@@ -3035,7 +3040,7 @@ NSVGimage* nsvgParseFromFile(const char* filename, const char* units, float dpi)
 	if (fread(data, 1, size, fp) != size) goto error;
 	data[size] = '\0';	// Must be null terminated.
 	fclose(fp);
-	image = nsvgParse(data, units, dpi);
+	image = nsvgParse(data, units, dpi, image_width, image_height);
 	free(data);
 
 	return image;
