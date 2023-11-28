@@ -2905,8 +2905,8 @@ static void nsvg__scaleToViewbox(NSVGparser* p, const char* units, double image_
 	// 	p->image->height = p->viewHeight;
 
 	// No translation!
-	// tx = -p->viewMinx;
-	// ty = -p->viewMiny;
+	tx = 0.0; // -p->viewMinx;
+	ty = 0.0; // -p->viewMiny;
 	sx = p->viewWidth > 0 ? p->image->width / p->viewWidth : 0;
 	sy = p->viewHeight > 0 ? p->image->height / p->viewHeight : 0;
 	// Unit scaling
