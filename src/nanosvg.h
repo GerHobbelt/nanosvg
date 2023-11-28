@@ -2881,28 +2881,28 @@ static void nsvg__scaleToViewbox(NSVGparser* p, const char* units, double image_
 
 	// THIS SHOULD BE SET, IF THIS IS NEEDED, THERE MIGHT BE TROUBLE
 	// Guess image size if not set completely.
-	nsvg__imageBounds(p, bounds);
+	// nsvg__imageBounds(p, bounds);
 
-	if (p->viewWidth == 0) {
-		if (p->image->width > 0) {
-			p->viewWidth = p->image->width;
-		} else {
-			p->viewMinx = bounds[0];
-			p->viewWidth = bounds[2] - bounds[0];
-		}
-	}
-	if (p->viewHeight == 0) {
-		if (p->image->height > 0) {
-			p->viewHeight = p->image->height;
-		} else {
-			p->viewMiny = bounds[1];
-			p->viewHeight = bounds[3] - bounds[1];
-		}
-	}
-	if (p->image->width == 0)
-		p->image->width = p->viewWidth;
-	if (p->image->height == 0)
-		p->image->height = p->viewHeight;
+	// if (p->viewWidth == 0) {
+	// 	if (p->image->width > 0) {
+	// 		p->viewWidth = p->image->width;
+	// 	} else {
+	// 		p->viewMinx = bounds[0];
+	// 		p->viewWidth = bounds[2] - bounds[0];
+	// 	}
+	// }
+	// if (p->viewHeight == 0) {
+	// 	if (p->image->height > 0) {
+	// 		p->viewHeight = p->image->height;
+	// 	} else {
+	// 		p->viewMiny = bounds[1];
+	// 		p->viewHeight = bounds[3] - bounds[1];
+	// 	}
+	// }
+	// if (p->image->width == 0)
+	// 	p->image->width = p->viewWidth;
+	// if (p->image->height == 0)
+	// 	p->image->height = p->viewHeight;
 
 	// No translation!
 	// tx = -p->viewMinx;
