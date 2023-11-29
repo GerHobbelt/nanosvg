@@ -2907,8 +2907,8 @@ static void nsvg__scaleToViewbox(NSVGparser* p, const char* units, double image_
 	// No translation!
 	tx = 0.0; // -p->viewMinx;
 	ty = 0.0; // -p->viewMiny;
-	sx = p->viewWidth > 0 ? image_width / p->viewWidth : 0;
-	sy = p->viewHeight > 0 ? image_height / p->viewHeight : 0;
+	sx = p->viewWidth > 0 ? p->image->width / p->viewWidth : 0;
+	sy = p->viewHeight > 0 ? p->image->height / p->viewHeight : 0;
 	// Unit scaling
 	us = 1.0f; // Fixed unit scaling
 	// us = 1.0f / nsvg__convertToPixels(p, nsvg__coord(1.0f, nsvg__parseUnits(units)), 0.0f, 1.0f);
